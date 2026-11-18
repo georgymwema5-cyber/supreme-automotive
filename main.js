@@ -38,3 +38,73 @@ if (form) {
     window.location.href = `mailto:contact@supreme-automotive.com?subject=${subject}&body=${body}`;
   });
 }
+
+
+// Cinematic interactions: progress, reveal, gentle depth and accessible motion.
+(() => {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const progress = document.createElement("div");
+  progress.className = "scroll-progress";
+  progress.innerHTML = "<span></span>";
+  document.body.prepend(progress);
+  const progressBar = progress.firstElementChild;
+  const header = document.querySelector(".site-header");
+  let ticking = false;
+
+  const updateScroll = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+    if (header) header.classList.toggle("is-scrolled", window.scrollY > 24);
+    ticking = false;
+  };
+  window.addEventListener("scroll", () => {
+    if (!ticking) { window.requestAnimationFrame(updateScroll); ticking = true; }
+  }, { passive: true });
+  updateScroll();
+
+  const revealItems = document.querySelectorAll(
+    "main section:not(.hero):not(.page-hero), .vehicle-card, .catalogue-card, .value-item, .footer-main"
+  );
+  if (!reduceMotion && "IntersectionObserver" in window) {
+    document.body.classList.add("reveal-ready");
+    revealItems.forEach((item, index) => {
+      item.classList.add("reveal");
+      if (item.matches(".vehicle-card,.catalogue-card,.value-item")) {
+        item.dataset.delay = String((index % 3) + 1);
+      }
+    });
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -35px 0px" });
+    revealItems.forEach(item => observer.observe(item));
+  }
+
+  // Subtle pointer depth on large screens only; disabled for touch and reduced motion.
+  if (!reduceMotion && window.matchMedia("(hover:hover) and (pointer:fine)").matches) {
+    document.querySelectorAll(".vehicle-card,.catalogue-card").forEach(card => {
+      card.addEventListener("pointermove", event => {
+        const rect = card.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width - .5;
+        const y = (event.clientY - rect.top) / rect.height - .5;
+        card.style.transform = `translateY(-4px) perspective(900px) rotateX(${-y * 2}deg) rotateY(${x * 2}deg)`;
+      });
+      card.addEventListener("pointerleave", () => { card.style.transform = ""; });
+    });
+  }
+
+  // Close the mobile menu after navigation and keep its accessibility state accurate.
+  const menu = document.querySelector(".menu-toggle");
+  const nav = document.querySelector(".main-nav");
+  if (menu && nav) {
+    nav.querySelectorAll("a").forEach(link => link.addEventListener("click", () => {
+      nav.classList.remove("open");
+      menu.setAttribute("aria-expanded", "false");
+      menu.textContent = "☰";
+    }));
+  }
+})();
