@@ -1,0 +1,4 @@
+SUPRÊME Automotive — GitHub write-access test
+
+This file confirms that the connected GitHub integration can create a commit on a separate test branch.
+Main branch was not modified.
